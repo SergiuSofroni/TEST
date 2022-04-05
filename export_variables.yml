@@ -1,0 +1,11 @@
+﻿versions: D:\SourceVersions\
+sitename: RP - Fakesite
+sitepath: D:\WebsitesRP\fakesite
+Archive: d:\ArchiveRP\
+out: D:\SourceVersions\2.5.1 16 466f3d
+pkg: HtmlClients.16.HTMLClientPipelineAnsible.Web.Testing.466f3d.zip
+updates: c:\Windows\Temp\
+commit: 466f3d
+resources: d:\WebsitesRP\Resources\WebResources\WebClient\
+before: d:\WebSitesRP\Resources\WebResourcesBefore\WebClient\
+exclude: version.js js css ApplicationLogger.cs Global.asax.cs ClientLobbySite.csproj ClientLobbySite.csproj.user Module obj Properties packages.config bundleconfig.json Web.Testing.config Web.Staging.config Web.Release.config Web.Debug.config Web.Base.config

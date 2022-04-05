@@ -1,0 +1,134 @@
+---
+- name: Deploy after-steps for HTMLClient
+  hosts: testing
+  vars_files:
+    #- credentials_testing.yml
+    - export_variables.yml
+      #ars:
+      #itepath: "{{ sitepath }}"
+      #ansible_ssh_pass: "{{ ansible_ssh_pass }}"
+
+  tasks:
+    - debug:
+        msg: Below play will run under {{ ansible_user }} using package {{ pkg  }}
+
+        #- name: Fetch the artifact
+        #run_once: yes
+        #fetch: src={{ updates }}/{{ pkg }} dest=buffer/ flat=yes validate_checksum=yes
+        #when: inventory_hostname == 'XContabo'
+        #register: fetchfile
+
+        #- name: Output Fetch
+        #debug: var=fetchfile
+
+    - name: Copy the artifact to the destination
+      copy: src={{ pkg }} dest={{ out }}/ checksum=yes
+      #when: inventory_hostname == 'XContabo'
+      register: copyfile
+
+    - name: Output Copy
+      debug: var=copyfile
+
+    - name: Copied the package
+      vars:
+        msg: |
+          -----------------------------------------------
+          We have copied the necessary files
+          -----------------------------------------------
+          {{ pkg }} 
+          export_variables.yml
+          -----------------------------------------------
+      debug:
+        msg: "{{ msg.split('\n') }}"
+
+
+    - name: Stopping the website
+      community.windows.win_iis_website:
+        name: "{{ sitename }}"
+        state: stopped
+        register: result
+
+    - name: Stopping the application pool
+      community.windows.win_iis_webapppool:
+        name: "{{ sitename }}"
+        state: stopped
+        register: result
+
+    - name: Starting the deploy
+      block:
+        - name: Reset folder permissions
+          win_shell: icacls {{ sitepath }}\* /q /c /t /reset
+
+        - name: Delete {{ before }} folder
+          win_file:
+            path: "{{ before }}"
+            state: absent
+
+        - name: Create{{ before }} folder
+          win_file:
+            path: "{{ before }}"
+            state: directory
+
+        - name: Move files from {{ resources }} to {{ before }}
+          win_shell: Move-Item {{ resources }}\* -Destination {{ before }} -force
+
+        - name: Creating a backup to {{ Archive }}
+          win_shell: |
+                  Write-Output "Using archive folder {{ Archive }}"
+                  Set-Location {{ Archive }}
+                  "-"*120
+                  $backdir = New-Item -ItemType Directory -Path  "{{ sitename }} - before {{ commit }} $((Get-Date).ToString('yyyy-MM-dd.HH.mm'))" -force
+                  Set-Location "$backdir"
+                  Write-Output "Moving files to destination backup dir $(Get-Location)"
+                  start-sleep 5
+                  Move-Item {{ sitepath }}\* -Exclude logs . -Force -ea 0
+                  Write-Output 'Compressing and removing flat files'
+                  Compress-Archive .\* -CompressionLevel Fastest site.zip #-verbose ("$Using:sitename")
+                  Remove-Item -Recurse $backdir\* -Exclude site.zip -force #-verbose
+                  #ConvertTo-Json -Depth 1
+                  "-"*120
+          register: backup_out
+        - debug:
+            msg: "{{ backup_out.stdout_lines }}"
+
+        - name: Deploying the artifact and creating new resources
+          win_shell: |
+                  Write-Output "The package to be deployed is {{ pkg }}"
+                  Write-Output "Expanding Artifact {{ out }}\{{ pkg }}..."
+                  Expand-Archive "{{ out }}\{{ pkg }}" {{ sitepath }} -Force
+                  Write-Output "Creating new resources."
+                  Get-ChildItem {{ sitepath }} -Directory -exclude bin | ForEach-Object {Copy-Item $_.fullname -Destination {{ resources }} -Recurse}
+                  if (test-path {{ before }}\images\liveDealers\){Get-ChildItem {{ before }}\images\liveDealers\ | ForEach-Object {Copy-Item $_.fullname -Destination {{ resources }}\images\liveDealers\ -Recurse -Force}}
+                  #trigger CDN to update the resource files
+                  Get-ChildItem {{ resources }} -recurse | ForEach-Object {$_.LastWriteTime = Get-Date}
+
+                  #Remove-item $Using:updates\$Using:pkg, $Using:updates\*.ps1 -verbose -force -ev +ProcessingErrors -ea 0
+          register: deploy_out
+        - debug:
+            msg: "{{ deploy_out.stdout_lines }}"
+            
+
+      when: sitepath != None
+
+    - name: Starting the website
+      community.windows.win_iis_website:
+        name: "{{ sitename }}"
+        state: started
+        register: result
+
+    - name: Starting the application pool
+      community.windows.win_iis_webapppool:
+        name: "{{ sitename }}"
+        state: started
+        register: result
+
+    - name: Post build information
+      debug:
+        msg:
+        - "*********************************"
+        - "Deployed Package: {{ pkg }}"
+        - "Commit used: {{ commit }}"
+        - "*********************************"
+
+          #    - name: Deleting the artifact from home directory on Ansible
+          #local_action: command sudo rm -f /home/xprogaming/*.zip
