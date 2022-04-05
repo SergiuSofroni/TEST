@@ -10,7 +10,7 @@
 
   tasks:
     - debug:
-        msg: Below commands will run under {{ ansible_user }} and version is {{ versions  }} and backup directory is {{ backdir }}
+        msg: Below commands will run under ...
     - name: Remote Execute the mqsc files
       win_shell: |
         hostname
