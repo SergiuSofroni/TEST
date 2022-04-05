@@ -1,5 +1,5 @@
 ---
-- name: Windows Ping Playbook
+- name: Windows Test Playbook
   hosts: all
 
   tasks:
@@ -10,4 +10,4 @@
 
     - name: Induce an exception to see what happens
       win_ping:
-      	data: crash
+		data: crash
