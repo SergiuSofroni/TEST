@@ -1,0 +1,22 @@
+---
+- name: Windows Test Playbook
+  hosts: all
+  #vars_files:
+    #- credentials_testing.yml
+    #- export_variables.yml
+      #  vars:
+      #ansible_user: "{{ ansible_user }}" 
+      #ansible_ssh_pass: "{{ ansible_ssh_pass }}" 
+
+  tasks:
+    - debug:
+        msg: Below commands will run under {{ ansible_user }} and version is {{ versions  }} and backup directory is {{ backdir }}
+    - name: Remote Execute the mqsc files
+      win_shell: |
+        hostname
+        Get-Date
+        systeminfo
+      register: scriptoutput
+
+    - name: Script output
+      debug: var=scriptoutput.stdout_lines

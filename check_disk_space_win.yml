@@ -1,0 +1,18 @@
+---
+# This playbook runs a basic DF command.
+
+- hosts: all
+  #remote_user: root
+
+  tasks:
+  - name: find disk space available.
+    command: dir
+    register: results
+  - debug:
+      var: results.stdout_lines
+
+  - name: check directory items
+    command: chkdsk
+    register: results
+  - debug:
+          var: results.stdout_lines
