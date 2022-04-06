@@ -1,6 +1,6 @@
 ---
 - name: Deploy after-steps for HTMLClient
-  hosts: testing
+  hosts: all
   vars_files:
     #- credentials_testing.yml
     - export_variables.yml
