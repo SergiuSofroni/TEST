@@ -43,13 +43,13 @@
 
 
     - name: Stopping the website
-      community.windows.win_iis_website:
+      win_iis_website:
         name: "{{ sitename }}"
         state: stopped
         register: result
 
     - name: Stopping the application pool
-      community.windows.win_iis_webapppool:
+      win_iis_webapppool:
         name: "{{ sitename }}"
         state: stopped
         register: result
@@ -111,13 +111,13 @@
       when: sitepath != None
 
     - name: Starting the website
-      community.windows.win_iis_website:
+      win_iis_website:
         name: "{{ sitename }}"
         state: started
         register: result
 
     - name: Starting the application pool
-      community.windows.win_iis_webapppool:
+      win_iis_webapppool:
         name: "{{ sitename }}"
         state: started
         register: result
